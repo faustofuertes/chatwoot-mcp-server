@@ -1,7 +1,7 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { getLead } from "./tools/leads";
+import { getLead, moveLead } from "./tools/leads";
 import { Env } from "./types";
 
 export class MyMCP extends McpAgent {
@@ -16,7 +16,7 @@ export class MyMCP extends McpAgent {
 
 	async init() {
 
-		this.server.tool(
+		/*this.server.tool(
 			"get_lead",
 			"Retrieve detailed information for a specific lead using its lead ID.",
 			{
@@ -36,6 +36,37 @@ export class MyMCP extends McpAgent {
 
 				} catch (error) {
 					return { content: [{ type: 'text', text: 'Error fetching lead.' }] }
+				}
+			}
+		);*/
+
+		this.server.tool(
+			"move_lead",
+			"This tool is useful when you have to move a lead to a diferent pipeline.",
+			{
+				lead_id: z.number().describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
+				pipeline_id: z.number().describe("Id of the pipelinle the lead is supose to be moved in"),
+				status_id: z.number().describe("Id of the column of the pipeline the lead is supose to be moved in")
+			},
+			async ({ lead_id, pipeline_id, status_id }) => {
+				try {
+
+					const kommoCLient = this.getConfig();
+					const lead = await getLead(lead_id, kommoCLient);
+
+					if (lead === null) {
+						return { content: [{ type: "text", text: "Error moving lead (lead not found)." }] }
+					}
+
+					const res = await moveLead(lead_id, pipeline_id, status_id, kommoCLient);
+
+					if (res === null) {
+						return { content: [{ type: "text", text: "Error moving lead." }] }
+					}
+
+					return { content: [{ type: "text", text: "Lead moved succesfully." }] }
+				} catch (error) {
+					return { content: [{ type: "text", text: "Error moving lead." }] }
 				}
 			}
 		);
