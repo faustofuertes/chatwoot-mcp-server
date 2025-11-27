@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kommo-mcp-server",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "migrations": [
+    {
+      "new_sqlite_classes": ["MyMCP"],
+      "tag": "v1",
+    },
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "MyMCP",
+        "name": "MCP_OBJECT",
+      },
+    ],
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "KOMMO_LONG_DURATION_TOKEN": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjA0M2M3NGVhN2JhNGMwY2YxZjc3YThiMGZjYTkxZjY0YTlkNTVjMDE2NWJhMjI4ZTI0ZjdjZjZjZTMyOGM2MDQ4NDEwYTMwZWE4YjRhMzBiIn0",
+    "KOMMO_ACCOUNT_SUBDOMAIN": "nhautopiezas",
+  },
+}
