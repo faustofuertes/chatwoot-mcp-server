@@ -13,6 +13,7 @@ export class MyMCP extends McpAgent {
 
 		this.server.tool(
 			"get_lead",
+			"Retrieve detailed information for a specific lead using its lead ID.",
 			{
 				lead_id: z.number().describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system.")
 			},
