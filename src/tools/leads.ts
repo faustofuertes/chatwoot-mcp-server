@@ -55,7 +55,7 @@ export async function pauseLeadAgent(lead_id: number, kommoClient: any) {
                     {
                         field_id: 1493142,
                         values: [
-                            { value: false }
+                            { value: true }
                         ]
                     }
                 ]
