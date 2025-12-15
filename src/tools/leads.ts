@@ -42,7 +42,7 @@ export async function moveLead(lead_id: number, pipeline_id: number, status_id: 
     }
 }
 
-export async function pauseLeadAgent(lead_id: number, kommoClient: any) {
+export async function pauseLeadAgent(lead_id: number, salesbot_id:number, kommoClient: any) {
     try {
         const res = await fetch(`https://${kommoClient.KOMMO_ACCOUNT_SUBDOMAIN}.kommo.com/api/v4/leads/${lead_id}`, {
             method: "PATCH",
@@ -53,7 +53,7 @@ export async function pauseLeadAgent(lead_id: number, kommoClient: any) {
             body: JSON.stringify({
                 custom_fields_values: [
                     {
-                        field_id: 1493142,
+                        field_id: salesbot_id,
                         values: [
                             { value: true }
                         ]
@@ -62,17 +62,43 @@ export async function pauseLeadAgent(lead_id: number, kommoClient: any) {
             })
         });
 
-        if (!res.ok) {
-            const errText = await res.text();
-            console.error("❌ pauseLeadAgent failed: Kommo responded with an error.", errText);
-            return null;
-        }
-
         const data = await res.json();
         return data;
 
     } catch (error) {
-        console.error("❌ pauseLeadAgent failed: unexpected error while updating the lead.", error);
+        console.error("❌ pauseLeadAgent failed: unexpected error while pausing the agent.", error);
         return null;
     }
 }
+
+export async function addNoteToLead(leadId: number, kommoClient: any, note: string) {
+    try {
+        const res = await fetch(
+            `https://${kommoClient.KOMMO_ACCOUNT_SUBDOMAIN}.kommo.com/api/v4/leads/${leadId}/notes`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    Authorization: `Bearer ${kommoClient.KOMMO_LONG_DURATION_TOKEN}`
+                },
+                body: JSON.stringify([
+                    {
+                        note_type: "common",
+                        text: `${note}`
+                    }
+                ])
+            }
+        );
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err);
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error("Error al agregar nota:", error);
+        throw error;
+    }
+}  
