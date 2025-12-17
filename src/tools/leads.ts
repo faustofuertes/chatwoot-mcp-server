@@ -71,10 +71,10 @@ export async function pauseLeadAgent(lead_id: number, switch_field_id: number, s
     }
 }
 
-export async function addNoteToLead(leadId: number, kommoClient: any, note: string) {
+export async function addNoteToLead(lead_id: number, kommoClient: any, note: string) {
     try {
         const res = await fetch(
-            `https://${kommoClient.KOMMO_ACCOUNT_SUBDOMAIN}.kommo.com/api/v4/leads/${leadId}/notes`,
+            `https://${kommoClient.KOMMO_ACCOUNT_SUBDOMAIN}.kommo.com/api/v4/leads/${lead_id}/notes`,
             {
                 method: "POST",
                 headers: {
@@ -101,4 +101,31 @@ export async function addNoteToLead(leadId: number, kommoClient: any, note: stri
         console.error("Error al agregar nota:", error);
         throw error;
     }
-}  
+}
+
+export async function addTagToLead(lead_id: number, tag_id: number, kommoCLient: any) {
+    try {
+        const res = await fetch(`https://${kommoCLient.KOMMO_ACCOUNT_SUBDOMAIN}.kommo.com/api/v4/leads/${lead_id}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    Authorization: `Bearer ${kommoCLient.KOMMO_LONG_DURATION_TOKEN}`
+                },
+                body: JSON.stringify({
+                    tags_to_add: [
+                        {
+                            "id": tag_id
+                        }
+                    ]
+                })
+            }
+        );
+
+        return res;
+    } catch (error) {
+        console.error("❌ addTagToLead failed: unexpected error while adding tag to lead.", error);
+        return null;
+    }
+}

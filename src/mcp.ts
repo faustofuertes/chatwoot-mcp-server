@@ -1,7 +1,7 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { addNoteToLead, getLead, moveLead, pauseLeadAgent } from "./tools/leads";
+import { addNoteToLead, addTagToLead, getLead, moveLead, pauseLeadAgent } from "./tools/leads";
 import { canUseTool } from "./utils/canUseTools";
 
 export class MyMCP extends McpAgent {
@@ -96,10 +96,10 @@ export class MyMCP extends McpAgent {
 					lead_id: z
 						.number()
 						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
-						switch_field_id: z
+					switch_field_id: z
 						.number()
 						.describe("ID of the switch field to pause for this lead."),
-						switch_field_value: z
+					switch_field_value: z
 						.boolean()
 						.describe("Status of the switch field to pause for this lead.")
 				},
@@ -199,5 +199,60 @@ export class MyMCP extends McpAgent {
 			)
 		}
 
+		/*──────────────── add_tag ──────────────*/
+		if (canUseTool(kommoCLient, "add_tag")) {
+			this.server.tool(
+				"add_tag",
+				"This tool adds a tag to a specific lead in Kommo.",
+				{
+					lead_id: z
+						.number()
+						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
+					tag_id: z
+						.number()
+						.describe("ID of the tag to add to the lead."),
+				},
+				async ({ lead_id, tag_id }) => {
+					try {
+
+						const lead = await getLead(lead_id, kommoCLient);
+
+						if (lead === null) {
+							return {
+								content: [
+									{
+										type: "text",
+										text: "Failed to add tag: the specified lead does not exist in Kommo."
+									}
+								]
+							}
+						}
+
+						const res = await addTagToLead(lead_id, tag_id, kommoCLient);
+
+						return {
+							content: [
+								{
+									type: "text",
+									text: "Tag added succesfully."
+								}
+							]
+						}
+					} catch (error) {
+						console.error("💥 [add_note] Error:", error);
+						return {
+							content: [
+								{
+									type: "text",
+									text: `Error al añadir nota al lead: ${(error as Error).message || error}`
+								}
+							]
+						}
+					}
+				}
+			);
+		}
+
+		
 	}
 }
