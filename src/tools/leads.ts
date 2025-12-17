@@ -42,7 +42,7 @@ export async function moveLead(lead_id: number, pipeline_id: number, status_id: 
     }
 }
 
-export async function pauseLeadAgent(lead_id: number, salesbot_id:number, kommoClient: any) {
+export async function pauseLeadAgent(lead_id: number, salesbot_id:number, switch_field_status: boolean, kommoClient: any) {
     try {
         const res = await fetch(`https://${kommoClient.KOMMO_ACCOUNT_SUBDOMAIN}.kommo.com/api/v4/leads/${lead_id}`, {
             method: "PATCH",
@@ -55,7 +55,7 @@ export async function pauseLeadAgent(lead_id: number, salesbot_id:number, kommoC
                     {
                         field_id: salesbot_id,
                         values: [
-                            { value: true }
+                            { value: switch_field_status }
                         ]
                     }
                 ]

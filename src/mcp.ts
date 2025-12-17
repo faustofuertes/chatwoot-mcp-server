@@ -98,9 +98,12 @@ export class MyMCP extends McpAgent {
 						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
 					salesbot_id: z
 						.number()
-						.describe("Numeric ID of the Kommo Salesbot to pause for this lead.")
+						.describe("Numeric ID of the Kommo Salesbot to pause for this lead."),
+					switch_field_status: z
+						.boolean()
+						.describe("Status of the switch field to pause for this lead.")
 				},
-				async ({ lead_id, salesbot_id }) => {
+				async ({ lead_id, salesbot_id, switch_field_status }) => {
 					try {
 
 						const lead = await getLead(lead_id, kommoCLient);
@@ -116,7 +119,7 @@ export class MyMCP extends McpAgent {
 							}
 						}
 
-						const res = await pauseLeadAgent(lead_id, salesbot_id, kommoCLient);
+						const res = await pauseLeadAgent(lead_id, salesbot_id, switch_field_status, kommoCLient);
 
 						return {
 							content: [
