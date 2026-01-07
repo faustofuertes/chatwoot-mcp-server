@@ -1,7 +1,7 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { addNoteToLead, addTagToLead, getLead, moveLead, pauseLeadAgent } from "./tools/leads";
+import { addBudgetToLead, addNoteToLead, addTagToLead, getLead, moveLead, pauseLeadAgent } from "./tools/leads";
 import { canUseTool } from "./utils/canUseTools";
 
 export class MyMCP extends McpAgent {
@@ -36,7 +36,6 @@ export class MyMCP extends McpAgent {
 				},
 				async ({ lead_id, pipeline_id, status_id }) => {
 					try {
-
 						const lead = await getLead(lead_id, kommoCLient);
 
 						if (lead === null) {
@@ -44,7 +43,7 @@ export class MyMCP extends McpAgent {
 								content: [
 									{
 										type: "text",
-										text: "Failed to move lead: the specified lead does not exist in Kommo."
+										text: "Failed to move lead: the specified lead does not exist in Kommo or could not be retrieved."
 									}
 								]
 							}
@@ -57,7 +56,7 @@ export class MyMCP extends McpAgent {
 								content: [
 									{
 										type: "text",
-										text: "Failed to move lead: Kommo did not accept the update request."
+										text: "Failed to move lead: Kommo API rejected the update request. Please verify the pipeline_id and status_id are valid."
 									}
 								]
 							}
@@ -78,7 +77,7 @@ export class MyMCP extends McpAgent {
 							content: [
 								{
 									type: "text",
-									text: `Error al mover el lead: ${(error as Error).message || error}`
+									text: `Error al mover el lead: ${(error as Error).message || String(error)}`
 								}
 							]
 						}
@@ -105,7 +104,6 @@ export class MyMCP extends McpAgent {
 				},
 				async ({ lead_id, switch_field_id, switch_field_value = false }) => {
 					try {
-
 						const lead = await getLead(lead_id, kommoCLient);
 
 						if (lead === null) {
@@ -113,13 +111,24 @@ export class MyMCP extends McpAgent {
 								content: [
 									{
 										type: "text",
-										text: "Failed to pause agent: the specified lead does not exist in Kommo."
+										text: "Failed to pause agent: the specified lead does not exist in Kommo or could not be retrieved."
 									}
 								]
 							}
 						}
 
 						const res = await pauseLeadAgent(lead_id, switch_field_id, switch_field_value, kommoCLient);
+
+						if (res === null) {
+							return {
+								content: [
+									{
+										type: "text",
+										text: "Failed to pause agent: Kommo API rejected the update request. Please verify the switch_field_id is valid."
+									}
+								]
+							}
+						}
 
 						return {
 							content: [
@@ -136,7 +145,7 @@ export class MyMCP extends McpAgent {
 							content: [
 								{
 									type: "text",
-									text: `Error al pausar el agente: ${(error as Error).message || error}`
+									text: `Error al pausar el agente: ${(error as Error).message || String(error)}`
 								}
 							]
 						}
@@ -160,16 +169,27 @@ export class MyMCP extends McpAgent {
 				},
 				async ({ lead_id, note }) => {
 					try {
+						const lead = await getLead(lead_id, kommoCLient);
+
+						if (lead === null) {
+							return {
+								content: [
+									{
+										type: "text",
+										text: "Failed to add note: the specified lead does not exist in Kommo or could not be retrieved."
+									}
+								]
+							}
+						}
 
 						const res = await addNoteToLead(lead_id, kommoCLient, note);
 
 						if (res === null) {
 							return {
 								content: [
-
 									{
 										type: "text",
-										text: "Error adding the note."
+										text: "Failed to add note: Kommo API rejected the request. Please verify the lead_id is valid and the note content is acceptable."
 									}
 								]
 							}
@@ -179,7 +199,7 @@ export class MyMCP extends McpAgent {
 							content: [
 								{
 									type: "text",
-									text: "Note added succesfully."
+									text: "Note added successfully."
 								}
 							]
 						}
@@ -190,7 +210,7 @@ export class MyMCP extends McpAgent {
 							content: [
 								{
 									type: "text",
-									text: `Error al añadir nota al lead: ${(error as Error).message || error}`
+									text: `Error al añadir nota al lead: ${(error as Error).message || String(error)}`
 								}
 							]
 						}
@@ -214,7 +234,6 @@ export class MyMCP extends McpAgent {
 				},
 				async ({ lead_id, tag_id }) => {
 					try {
-
 						const lead = await getLead(lead_id, kommoCLient);
 
 						if (lead === null) {
@@ -222,7 +241,7 @@ export class MyMCP extends McpAgent {
 								content: [
 									{
 										type: "text",
-										text: "Failed to add tag: the specified lead does not exist in Kommo."
+										text: "Failed to add tag: the specified lead does not exist in Kommo or could not be retrieved."
 									}
 								]
 							}
@@ -230,21 +249,32 @@ export class MyMCP extends McpAgent {
 
 						const res = await addTagToLead(lead_id, tag_id, kommoCLient);
 
+						if (res === null) {
+							return {
+								content: [
+									{
+										type: "text",
+										text: "Failed to add tag: Kommo API rejected the request. Please verify the tag_id is valid and exists in your Kommo account."
+									}
+								]
+							}
+						}
+
 						return {
 							content: [
 								{
 									type: "text",
-									text: "Tag added succesfully."
+									text: "Tag added successfully."
 								}
 							]
 						}
 					} catch (error) {
-						console.error("💥 [add_note] Error:", error);
+						console.error("💥 [add_tag] Error:", error);
 						return {
 							content: [
 								{
 									type: "text",
-									text: `Error al añadir nota al lead: ${(error as Error).message || error}`
+									text: `Error al añadir tag al lead: ${(error as Error).message || String(error)}`
 								}
 							]
 						}
@@ -253,6 +283,70 @@ export class MyMCP extends McpAgent {
 			);
 		}
 
-		
+		/*──────────────── add_budget ──────────────*/
+		if (canUseTool(kommoCLient, "add_budget")) {
+			this.server.tool(
+				"add_budget",
+				"This tool adds a budget to a specific lead in Kommo.",
+				{
+					lead_id: z
+						.number()
+						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
+					budget_field_value: z
+						.number()
+						.describe("Budget to add to this lead.")
+				},
+				async ({ lead_id, budget_field_value }) => {
+					try {
+						const lead = await getLead(lead_id, kommoCLient);
+
+						if (lead === null) {
+							return {
+								content: [
+									{
+										type: "text",
+										text: "Failed to add budget: the specified lead does not exist in Kommo or could not be retrieved."
+									}
+								]
+							}
+						}
+
+						const res = await addBudgetToLead(lead_id, budget_field_value, kommoCLient);
+
+						if (res === null) {
+							return {
+								content: [
+									{
+										type: "text",
+										text: "Failed to add budget: Kommo API rejected the request. Please verify the lead_id is valid and the budget value is a valid number."
+									}
+								]
+							}
+						}
+
+						return {
+							content: [
+								{
+									type: "text",
+									text: "Budget successfully added to the specified lead."
+								}
+							]
+						}
+
+					} catch (error) {
+						console.error("💥 [add_budget] Error:", error);
+						return {
+							content: [
+								{
+									type: "text",
+									text: `Error al agregar el presupuesto al lead: ${(error as Error).message || String(error)}`
+								}
+							]
+						}
+					}
+				}
+			);
+		}
+
 	}
 }

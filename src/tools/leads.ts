@@ -8,8 +8,13 @@ export async function getLead(lead_id: number, kommoCLient: any) {
             }
         });
 
-        const data = await res.json();
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`❌ getLead failed: HTTP ${res.status} - ${errorText}`);
+            return null;
+        }
 
+        const data = await res.json();
         return data || null;
 
     } catch (error) {
@@ -33,9 +38,16 @@ export async function moveLead(lead_id: number, pipeline_id: number, status_id: 
                     status_id: status_id
                 })
             }
-        )
+        );
 
-        return res;
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`❌ moveLead failed: HTTP ${res.status} - ${errorText}`);
+            return null;
+        }
+
+        const data = await res.json();
+        return data;
     } catch (error) {
         console.error("❌ moveLead failed: unable to update pipeline or status for the specified lead.", error);
         return null;
@@ -61,6 +73,12 @@ export async function pauseLeadAgent(lead_id: number, switch_field_id: number, s
                 ]
             })
         });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`❌ pauseLeadAgent failed: HTTP ${res.status} - ${errorText}`);
+            return null;
+        }
 
         const data = await res.json();
         return data;
@@ -92,14 +110,16 @@ export async function addNoteToLead(lead_id: number, kommoClient: any, note: str
         );
 
         if (!res.ok) {
-            const err = await res.text();
-            throw new Error(err);
+            const errorText = await res.text();
+            console.error(`❌ addNoteToLead failed: HTTP ${res.status} - ${errorText}`);
+            return null;
         }
 
-        return await res.json();
+        const data = await res.json();
+        return data;
     } catch (error) {
-        console.error("Error al agregar nota:", error);
-        throw error;
+        console.error("❌ addNoteToLead failed: unexpected error while adding note to lead.", error);
+        return null;
     }
 }
 
@@ -123,9 +143,50 @@ export async function addTagToLead(lead_id: number, tag_id: number, kommoCLient:
             }
         );
 
-        return res;
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`❌ addTagToLead failed: HTTP ${res.status} - ${errorText}`);
+            return null;
+        }
+
+        const data = await res.json();
+        return data;
     } catch (error) {
         console.error("❌ addTagToLead failed: unexpected error while adding tag to lead.", error);
+        return null;
+    }
+}
+
+export async function addBudgetToLead(lead_id: number, price: number, kommoClient: any) {
+    try {
+        const res = await fetch(
+            `https://${kommoClient.KOMMO_ACCOUNT_SUBDOMAIN}.kommo.com/api/v4/leads`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${kommoClient.KOMMO_LONG_DURATION_TOKEN}`
+                },
+                body: JSON.stringify([
+                    {
+                        id: lead_id,
+                        price: price
+                    }
+                ])
+            }
+        );
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`❌ addBudgetToLead failed: HTTP ${res.status} - ${errorText}`);
+            return null;
+        }
+
+        const data = await res.json();
+        return data;
+
+    } catch (error) {
+        console.error("❌ addBudgetToLead failed: unexpected error while adding budget to lead.", error);
         return null;
     }
 }
