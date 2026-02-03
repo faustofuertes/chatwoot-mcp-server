@@ -6,7 +6,7 @@ export async function addTagToConversation(conversation_id: number, labels: stri
                 "Content-Type": "application/json",
                 "api_access_token": chatwootClient.CHATWOOT_API_ACCESS_TOKEN
             },
-            body: JSON.stringify({ labels: labels })
+            body: JSON.stringify({ labels: labels }),
         });
 
         if (!res.ok) {
