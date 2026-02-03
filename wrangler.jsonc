@@ -25,7 +25,7 @@
   "vars": {
     "CHATWOOT_API_ACCESS_TOKEN": "",
     "CHATWOOT_ACCOUNT_ID": "",
-    "TOOLS_TO_USE" : []
+    "TOOLS_TO_USE" : [""]
   }
 }
 
