@@ -1,5 +1,5 @@
 export interface Env {
-    KOMMO_LONG_DURATION_TOKEN: string;
-    KOMMO_ACCOUNT_SUBDOMAIN: string;
+    CHATWOOT_API_ACCESS_TOKEN: string;
+    CHATWOOT_ACCOUNT_ID: string;
     TOOLS_TO_USE: string;
 }

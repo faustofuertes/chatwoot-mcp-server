@@ -8,16 +8,16 @@ export default {
 		const url = new URL(request.url);
 
 		// 1. Leer headers si existen
-		const headerToken = request.headers.get("KOMMO_LONG_DURATION_TOKEN");
-		const headerSubdomain = request.headers.get("KOMMO_ACCOUNT_SUBDOMAIN");
+		const headerToken = request.headers.get("CHATWOOT_API_ACCESS_TOKEN");
+		const headerSubdomain = request.headers.get("CHATWOOT_ACCOUNT_ID");
 		const headerTools = request.headers.get("TOOLS_TO_USE");
 
 		// 2. Elegir header > env
 		const finalConfig = {
-			KOMMO_LONG_DURATION_TOKEN:
-				headerToken || env.KOMMO_LONG_DURATION_TOKEN,
-			KOMMO_ACCOUNT_SUBDOMAIN:
-				headerSubdomain || env.KOMMO_ACCOUNT_SUBDOMAIN,
+			CHATWOOT_API_ACCESS_TOKEN:
+				headerToken || env.CHATWOOT_API_ACCESS_TOKEN,
+			CHATWOOT_ACCOUNT_ID:
+				headerSubdomain || env.CHATWOOT_ACCOUNT_ID,
 			TOOLS_TO_USE: parseTools(headerTools, env.TOOLS_TO_USE)
 		};
 

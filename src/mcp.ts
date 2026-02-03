@@ -1,8 +1,8 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { addBudgetToLead, addNoteToLead, addTagToLead, getLead, moveLead, pauseLeadAgent } from "./tools/leads";
 import { canUseTool } from "./utils/canUseTools";
+import { addTagToConversation } from "./tools/conversations";
 
 export class MyMCP extends McpAgent {
 	server = new McpServer({
@@ -16,245 +16,32 @@ export class MyMCP extends McpAgent {
 
 	async init() {
 
-		const kommoCLient = this.getConfig();
-
-		/*──────────────── move_lead ────────────────*/
-		if (canUseTool(kommoCLient, "move_lead")) {
-			this.server.tool(
-				"move_lead",
-				"This tool is useful when you need to move a lead to a different pipeline.",
-				{
-					lead_id: z
-						.number()
-						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
-					pipeline_id: z
-						.number()
-						.describe("ID of the pipeline where the lead should be moved."),
-					status_id: z
-						.number()
-						.describe("ID of the stage within the target pipeline where the lead should be placed.")
-				},
-				async ({ lead_id, pipeline_id, status_id }) => {
-					try {
-						const lead = await getLead(lead_id, kommoCLient);
-
-						if (lead === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to move lead: the specified lead does not exist in Kommo or could not be retrieved."
-									}
-								]
-							}
-						}
-
-						const res = await moveLead(lead_id, pipeline_id, status_id, kommoCLient);
-
-						if (res === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to move lead: Kommo API rejected the update request. Please verify the pipeline_id and status_id are valid."
-									}
-								]
-							}
-						}
-
-						return {
-							content: [
-								{
-									type: "text",
-									text: "Lead successfully moved to the specified pipeline and status."
-								}
-							]
-						}
-
-					} catch (error) {
-						console.error("💥 [move_lead] Error:", error);
-						return {
-							content: [
-								{
-									type: "text",
-									text: `Error al mover el lead: ${(error as Error).message || String(error)}`
-								}
-							]
-						}
-					}
-				}
-			);
-		}
-
-		/*──────────────── pause_agent ──────────────*/
-		if (canUseTool(kommoCLient, "pause_agent")) {
-			this.server.tool(
-				"pause_agent",
-				"This tool pauses the assigned agent for a specific lead.",
-				{
-					lead_id: z
-						.number()
-						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
-					switch_field_id: z
-						.number()
-						.describe("ID of the switch field to pause for this lead."),
-					switch_field_value: z
-						.boolean()
-						.describe("Status of the switch field to pause for this lead.")
-				},
-				async ({ lead_id, switch_field_id, switch_field_value = false }) => {
-					try {
-						const lead = await getLead(lead_id, kommoCLient);
-
-						if (lead === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to pause agent: the specified lead does not exist in Kommo or could not be retrieved."
-									}
-								]
-							}
-						}
-
-						const res = await pauseLeadAgent(lead_id, switch_field_id, switch_field_value, kommoCLient);
-
-						if (res === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to pause agent: Kommo API rejected the update request. Please verify the switch_field_id is valid."
-									}
-								]
-							}
-						}
-
-						return {
-							content: [
-								{
-									type: "text",
-									text: "Agent successfully paused for the specified lead."
-								}
-							]
-						}
-
-					} catch (error) {
-						console.error("💥 [pause_agent] Error:", error);
-						return {
-							content: [
-								{
-									type: "text",
-									text: `Error al pausar el agente: ${(error as Error).message || String(error)}`
-								}
-							]
-						}
-					}
-				}
-			);
-		}
-
-		/*──────────────── add_note ──────────────*/
-		if (canUseTool(kommoCLient, "add_note")) {
-			this.server.tool(
-				"add_note",
-				"This tool adds a note to a specific lead in Kommo, storing contextual or summarized information directly in the lead’s activity history.",
-				{
-					lead_id: z
-						.number()
-						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
-					note: z
-						.string()
-						.describe("A concise note generated by the agent based on the full conversation, summarizing the key points, user intent, and any relevant context to be stored in the lead’s history.")
-				},
-				async ({ lead_id, note }) => {
-					try {
-						const lead = await getLead(lead_id, kommoCLient);
-
-						if (lead === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to add note: the specified lead does not exist in Kommo or could not be retrieved."
-									}
-								]
-							}
-						}
-
-						const res = await addNoteToLead(lead_id, kommoCLient, note);
-
-						if (res === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to add note: Kommo API rejected the request. Please verify the lead_id is valid and the note content is acceptable."
-									}
-								]
-							}
-						}
-
-						return {
-							content: [
-								{
-									type: "text",
-									text: "Note added successfully."
-								}
-							]
-						}
-
-					} catch (error) {
-						console.error("💥 [add_note] Error:", error);
-						return {
-							content: [
-								{
-									type: "text",
-									text: `Error al añadir nota al lead: ${(error as Error).message || String(error)}`
-								}
-							]
-						}
-					}
-				}
-			)
-		}
+		const chatwootClient = this.getConfig();
 
 		/*──────────────── add_tag ──────────────*/
-		if (canUseTool(kommoCLient, "add_tag")) {
+		if (canUseTool(chatwootClient, "add_tag")) {
 			this.server.tool(
 				"add_tag",
-				"This tool adds a tag to a specific lead in Kommo.",
+				"This tool adds a tag to a specific conversation in Chatwoot.",
 				{
-					lead_id: z
+					conversation_id: z
 						.number()
-						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
-					tag_id: z
-						.number()
-						.describe("ID of the tag to add to the lead."),
+						.describe("Unique ID assigned by Chatwoot to the conversation. This identifier is used to fetch all related information for a specific conversation within the system."),
+					labels: z
+						.array(z.string())
+						.describe("Body of the request: { \"labels\": [] }. Array of label strings to add. conversation_id is sent only in the URL (path variable), not in the body."),
 				},
-				async ({ lead_id, tag_id }) => {
+				async ({ conversation_id, labels }) => {
 					try {
-						const lead = await getLead(lead_id, kommoCLient);
 
-						if (lead === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to add tag: the specified lead does not exist in Kommo or could not be retrieved."
-									}
-								]
-							}
-						}
-
-						const res = await addTagToLead(lead_id, tag_id, kommoCLient);
+						const res = await addTagToConversation(conversation_id, labels, chatwootClient);
 
 						if (res === null) {
 							return {
 								content: [
 									{
 										type: "text",
-										text: "Failed to add tag: Kommo API rejected the request. Please verify the tag_id is valid and exists in your Kommo account."
+										text: "Failed to add tag: Chatwoot API rejected the request. Please verify the labels are valid and exists in your Chatwoot account."
 									}
 								]
 							}
@@ -274,72 +61,7 @@ export class MyMCP extends McpAgent {
 							content: [
 								{
 									type: "text",
-									text: `Error al añadir tag al lead: ${(error as Error).message || String(error)}`
-								}
-							]
-						}
-					}
-				}
-			);
-		}
-
-		/*──────────────── add_budget ──────────────*/
-		if (canUseTool(kommoCLient, "add_budget")) {
-			this.server.tool(
-				"add_budget",
-				"This tool adds a budget to a specific lead in Kommo.",
-				{
-					lead_id: z
-						.number()
-						.describe("Unique ID assigned by Kommo CRM to the lead. This identifier is used to fetch all related information for a specific lead within the system."),
-					budget_field_value: z
-						.number()
-						.describe("Budget to add to this lead.")
-				},
-				async ({ lead_id, budget_field_value }) => {
-					try {
-						const lead = await getLead(lead_id, kommoCLient);
-
-						if (lead === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to add budget: the specified lead does not exist in Kommo or could not be retrieved."
-									}
-								]
-							}
-						}
-
-						const res = await addBudgetToLead(lead_id, budget_field_value, kommoCLient);
-
-						if (res === null) {
-							return {
-								content: [
-									{
-										type: "text",
-										text: "Failed to add budget: Kommo API rejected the request. Please verify the lead_id is valid and the budget value is a valid number."
-									}
-								]
-							}
-						}
-
-						return {
-							content: [
-								{
-									type: "text",
-									text: "Budget successfully added to the specified lead."
-								}
-							]
-						}
-
-					} catch (error) {
-						console.error("💥 [add_budget] Error:", error);
-						return {
-							content: [
-								{
-									type: "text",
-									text: `Error al agregar el presupuesto al lead: ${(error as Error).message || String(error)}`
+									text: `Error al añadir tag a la conversación: ${(error as Error).message || String(error)}`
 								}
 							]
 						}
